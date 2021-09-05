@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -46,11 +47,29 @@ func (e *Employee) employeeInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+func (e Employee) employeeJson(w http.ResponseWriter, _ *http.Request) {
+	e.Name = "Cem"
+	e.LastName = "Adrian"
+
+	output, err := json.Marshal(e)
+	if err != nil {
+		log.Println("Parsing Error", err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-TOKEN", "custom-token-value")
+	_, err = fmt.Fprintf(w, string(output))
+	if err != nil {
+		log.Println("Serving Error", err)
+		return
+	}
+}
 
 func main() {
 	e := new(Employee)
 	http.HandleFunc("/", hello)
 	http.HandleFunc("/employee", e.employeeInfo)
+	http.HandleFunc("/employeeJson", e.employeeJson)
 
 	err := http.ListenAndServe(":8081", nil)
 	if err != nil {
