@@ -3,9 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
+
+type Api struct {
+	Message string
+}
 
 type Employee struct {
 	Name     string
@@ -64,12 +69,33 @@ func (e Employee) employeeJson(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 }
+func (a Api) getApi(w http.ResponseWriter, r *http.Request) {
+	urlParams := mux.Vars(r)
+	id := urlParams["id"]
+	a.Message = "id : " + id
+
+	msg, err := json.Marshal(a)
+	if err != nil {
+		log.Fatal("Fatal Error", err)
+	}
+
+	_, err = fmt.Fprintf(w, string(msg))
+	if err != nil {
+		log.Fatal("Fatal Error", err)
+		return
+	}
+}
 
 func main() {
 	e := new(Employee)
-	http.HandleFunc("/", hello)
+	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/employee", e.employeeInfo)
 	http.HandleFunc("/employeeJson", e.employeeJson)
+
+	api := new(Api)
+	router := mux.NewRouter()
+	router.HandleFunc("/api/employee/{id:[1-9]+}", api.getApi)
+	http.Handle("/", router)
 
 	err := http.ListenAndServe(":8081", nil)
 	if err != nil {
